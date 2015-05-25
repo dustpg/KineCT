@@ -1,0 +1,7 @@
+TODO LIST:
+  TODO: 完成DLL
+  TODO: 完成Server-Host通讯
+  TODO: 完成HOST-DLL框架并实现基本功能
+  TODO: 一般特效
+  TODO: 移除微软框架
+  TODO: 放弃DShow
