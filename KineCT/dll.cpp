@@ -24,7 +24,7 @@ namespace KineCT {
     };
     // filter
     const AMOVIESETUP_FILTER AMSFilterKCam =  {
-        &CLSID_KVC,                     // Filter CLSID
+        &GUID_KineCTCam,                // Filter CLSID
         L"Kinect Camera Transformer",   // String name
         MERIT_DO_NOT_USE,               // Filter merit
         1,                              // Number pins
@@ -61,8 +61,23 @@ namespace KineCT {
     }
 }
 
+// 全局模板
+CFactoryTemplate g_Templates[] = {
+    {
+        L"Kinect Camera Transformer",
+        &KineCT::GUID_KineCTCam,
+        KineCT::CCTSource::CreateInstance,
+        nullptr,
+        &KineCT::AMSFilterKCam
+    },
+};
+// 数量
+int g_cTemplates = lengthof(g_Templates);
+
+
 // 注册服务
 STDAPI DllRegisterServer() {
+    IID_IMediaFilter;
     return KineCT::RegisterFilters(TRUE);
 }
 
@@ -85,4 +100,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID lpReserved) {
 #else
 #pragma comment(lib, "../Release/BaseClasses")
 #endif
+#pragma comment(lib, "dxguid")
+#pragma comment(lib, "Strmiids")
+#pragma comment(lib, "winmm")
 

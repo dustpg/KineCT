@@ -38,6 +38,7 @@
 
 #include <windows.h>
 #include <windowsx.h>
+#include <new>
 #include <olectl.h>
 #include <ddraw.h>
 #include <mmsystem.h>

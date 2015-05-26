@@ -11,7 +11,7 @@ namespace KineCT {
         virtual void Release() noexcept = 0;
     };
     // ct processor
-    class KINECT_NOVTABLE ICTProcessor {
+    class KINECT_NOVTABLE ICTProcessor : public ICTInterface {
     public:
         // update device
         virtual auto Update(void* kinect, IID& iid) noexcept->HRESULT = 0;
@@ -23,5 +23,12 @@ namespace KineCT {
         virtual auto RequestedDevice(IID& KINECT_OUT iid) noexcept->HRESULT = 0;
         // initialize the kinect device
         virtual auto InitializeKinect(void* kinect, const IID& iid) noexcept->HRESULT = 0;
+    };
+    // ct server
+    class KINECT_NOVTABLE ICTServer {
+    public:
+        // exit the host
+        virtual void ExitHost() noexcept = 0;
+        // set new media type
     };
 }

@@ -13,7 +13,13 @@ namespace KineCT {
         const wchar_t*      title;
         // sub-option length
         size_t              size;
+#ifdef _MSC_VER
+#pragma warning(disable: 4200)
         // sub-options
         const wchar_t*      subop[];
+#else 
+        // sub-options
+        const wchar_t*      subop[];
+#endif
     };
 }

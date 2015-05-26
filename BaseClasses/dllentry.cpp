@@ -183,6 +183,7 @@ CClassFactory::LockServer(BOOL fLock)
 }
 
 
+
 // --- COM entrypoints -----------------------------------------
 
 //called by COM to get the class factory object for a given class
@@ -206,7 +207,7 @@ DllGetClassObject(
             // found a template - make a class factory based on this
             // template
 
-            *pv = (LPVOID) (LPUNKNOWN) new CClassFactory(pT);
+            *pv = (LPVOID) (LPUNKNOWN) new(std::nothrow) CClassFactory(pT);
             if (*pv == NULL) {
                 return E_OUTOFMEMORY;
             }
