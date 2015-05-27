@@ -1,50 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="KineCT">
-      <UniqueIdentifier>{9d2a55d4-b82c-42a2-8189-b2e0d3b9b4ac}</UniqueIdentifier>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="KineCT\Base">
-      <UniqueIdentifier>{685e8e68-d65b-4765-aefc-55fcf5c70dc0}</UniqueIdentifier>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Impl">
-      <UniqueIdentifier>{3fedd6ca-0c3f-457a-9de7-d39d51f25466}</UniqueIdentifier>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{11402046-0f40-4982-a209-6dbce2f55b95}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="KinectCT.h">
-      <Filter>KineCT</Filter>
-    </ClInclude>
-    <ClInclude Include="Interface.h">
-      <Filter>KineCT\Base</Filter>
-    </ClInclude>
-    <ClInclude Include="ctconfig.h">
-      <Filter>KineCT\Base</Filter>
-    </ClInclude>
-    <ClInclude Include="Struct.h">
-      <Filter>KineCT\Base</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="KinectCT.cpp">
-      <Filter>Impl</Filter>
-    </ClCompile>
-    <ClCompile Include="dll.cpp">
-      <Filter>Impl</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="kinect.rc">
-      <Filter>Resource Files</Filter>
+      <Filter>Resources</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="KineCT.def" />
+    <ClCompile Include="KinectCT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="KinectCT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ctconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="KineCT.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

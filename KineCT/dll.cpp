@@ -1,6 +1,15 @@
 #include "KinectCT.h"
 
 
+STDAPI AMovieSetupRegisterServer(CLSID   clsServer
+    , LPCWSTR szDescription
+    , LPCWSTR szFileName
+    , LPCWSTR szThreadingModel = L"Both"
+    , LPCWSTR szServerType = L"InprocServer32");
+
+
+STDAPI AMovieSetupUnregisterServer(CLSID clsServer);
+
 // kinect ct
 namespace KineCT {
     // type
@@ -34,12 +43,50 @@ namespace KineCT {
     auto RegisterFilters(BOOL bRegister) noexcept { 
         WCHAR achFileName[MAX_PATH];
         ASSERT(g_hInst != 0);
-        // 检查路劲
+        // 检查路径
         if (!::GetModuleFileNameW(g_hInst, achFileName, lengthof(achFileName))) {
             return AmHresultFromWin32(::GetLastError());
         }
         // 初始化COM
         auto hr = ::CoInitialize(0);
+#if 1
+        // 注册
+        if (bRegister) {
+            hr = ::AMovieSetupRegisterServer(GUID_KineCTCam, L"Kinect Camera Transformer", achFileName, L"Both", L"InprocServer32");
+        }
+        // 创建
+        if (SUCCEEDED(hr)) {
+            IFilterMapper2 *fm = nullptr;
+            hr = ::CoCreateInstance(
+                CLSID_FilterMapper2,
+                nullptr,
+                CLSCTX_INPROC_SERVER,
+                IID_IFilterMapper2,
+                reinterpret_cast<void**>(&fm)
+                );
+            // 注册
+            if (SUCCEEDED(hr)) {
+                if (bRegister) {
+                    IMoniker *pMoniker = 0;
+                    REGFILTER2 rf2;
+                    rf2.dwVersion = 1;
+                    rf2.dwMerit = MERIT_DO_NOT_USE;
+                    rf2.cPins = 1;
+                    rf2.rgPins = PinsKCam;
+                    hr = fm->RegisterFilter(GUID_KineCTCam, L"Kinect Camera Transformer", &pMoniker, &CLSID_VideoInputDeviceCategory, NULL, &rf2);
+                }
+                else {
+                    hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, GUID_KineCTCam);
+                }
+            }
+            // 释放接口
+            KineCT::SafeRelease(fm);
+        }
+        // 注销
+        if (SUCCEEDED(hr) && !bRegister) {
+            hr = AMovieSetupUnregisterServer(GUID_KineCTCam);
+        }
+#else
         if (SUCCEEDED(hr)) {
             IFilterMapper2* mapper = nullptr;
             // Filter Mapper
@@ -57,6 +104,9 @@ namespace KineCT {
             }
             KineCT::SafeRelease(mapper);
         }
+#endif
+        ::CoFreeUnusedLibraries();
+        ::CoUninitialize();
         return hr;
     }
 }
@@ -77,12 +127,13 @@ int g_cTemplates = lengthof(g_Templates);
 
 // 注册服务
 STDAPI DllRegisterServer() {
-    IID_IMediaFilter;
+    ::MessageBoxW(nullptr, L"<DllRegisterServer>", L"INFO", MB_OK);
     return KineCT::RegisterFilters(TRUE);
 }
 
 // 注销服务
 STDAPI DllUnregisterServer() {
+    ::MessageBoxW(nullptr, L"<DllUnregisterServer>", L"INFO", MB_OK);
     return KineCT::RegisterFilters(FALSE);
 }
 

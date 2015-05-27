@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DED3E914-ED1B-452A-90CA-BF290456CCA3}</ProjectGuid>
+    <ProjectGuid>{9F2C678C-6A23-42B6-9F01-FF4AA18FF8C7}</ProjectGuid>
     <RootNamespace>KineCT</RootNamespace>
     <TargetPlatformVersion>10.0.10069.0</TargetPlatformVersion>
   </PropertyGroup>
@@ -42,22 +42,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)BaseClasses\;$(IncludePath)</IncludePath>
     <TargetName>KinectCT</TargetName>
+    <IncludePath>$(SolutionDir)BaseClasses\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)BaseClasses\;$(IncludePath)</IncludePath>
     <TargetName>KinectCT</TargetName>
+    <IncludePath>$(SolutionDir)BaseClasses\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>KineCT.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>kinect.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -67,27 +68,28 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <ModuleDefinitionFile>KineCT.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>kinect.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ctconfig.h" />
-    <ClInclude Include="Interface.h" />
-    <ClInclude Include="KinectCT.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Struct.h" />
+    <ResourceCompile Include="kinect.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dll.cpp" />
     <ClCompile Include="KinectCT.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="kinect.rc" />
+    <ClInclude Include="ctconfig.h" />
+    <ClInclude Include="Interface.h" />
+    <ClInclude Include="KinectCT.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Struct.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="KineCT.def" />

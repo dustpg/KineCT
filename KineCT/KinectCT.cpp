@@ -23,6 +23,7 @@ STDMETHODIMP KineCT::CCTSource::QueryInterface(REFIID riid, void ** ppv) noexcep
 KineCT::CCTSource::CCTSource(LPUNKNOWN lpunk, HRESULT *phr) noexcept:
 CSource(NAME("Kinect Camera Transformer"), lpunk, GUID_KineCTCam) {
     ASSERT(phr);
+    //::MessageBoxW(nullptr, L"<KineCT::CCTSource::CCTSource>", L"INFO", MB_OK);
     CAutoLock cAutoLock(&m_cStateLock);
     HRESULT hr = S_OK;
     // 创建PIN
@@ -49,8 +50,7 @@ void KineCT::CCTSource::ExitHost() noexcept {
 // CCTStream 构造函数
 KineCT::CCTStream::CCTStream(HRESULT * phr, CCTSource * pParent, LPCWSTR pPinName) noexcept:
 CSourceStream(NAME("Kinect Virtual Camera : Depth"), phr, pParent, pPinName), 
-m_pParent(KineCT::SafAddRef(pParent))
-{
+m_pParent(KineCT::SafAddRef(pParent)) {
     // Set the default media type as 640x480x24@30
     GetMediaType(8, &m_mt);
 }
@@ -63,6 +63,7 @@ KineCT::CCTStream::~CCTStream() noexcept {
 // 实现CCTStream::FillBuffer
 HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     HRESULT hr = S_OK;
+#if 0
     //
     auto avgFrameTime = reinterpret_cast<VIDEOINFOHEADER*>(m_mt.pbFormat)->AvgTimePerFrame;
     auto rtNow = m_rtLastTime;
@@ -89,6 +90,27 @@ HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     if (SUCCEEDED(hr)) {
         ::memset(pData, 0x80, lDataLen);
     }
+
+#else
+    REFERENCE_TIME rtNow;
+
+    REFERENCE_TIME avgFrameTime = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
+
+    rtNow = m_rtLastTime;
+    m_rtLastTime += avgFrameTime;
+    pSamp->SetTime(&rtNow, &m_rtLastTime);
+    pSamp->SetSyncPoint(TRUE);
+
+    BYTE *pData;
+    long lDataLen;
+    pSamp->GetPointer(&pData);
+    lDataLen = pSamp->GetSize();
+    register auto itr = pData;
+    for (; itr < pData + lDataLen; ++itr)
+        *itr = rand();
+
+    return NOERROR;
+#endif
     return hr;
 }
 
@@ -215,7 +237,7 @@ STDMETHODIMP KineCT::CCTStream::SetFormat(AM_MEDIA_TYPE * pmt) noexcept {
     if (pin) {
         IFilterGraph *pGraph = m_pParent->GetGraph();
         pGraph->Reconnect(this);
-        KineCT::SafeRelease(pGraph);
+        //KineCT::SafeRelease(pGraph);
     }
     return S_OK;
 }
