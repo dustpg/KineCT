@@ -1,5 +1,6 @@
 #include "KinectCT.h"
 
+
 // CCTSource 创建实例
 auto KineCT::CCTSource::CreateInstance(LPUNKNOWN lpunk, HRESULT* phr) noexcept -> CUnknown * {
     assert(phr && "bad argument");
@@ -36,35 +37,139 @@ CSource(NAME("Kinect Camera Transformer"), lpunk, GUID_KineCTCam) {
         m_paStreams[0] = new(std::nothrow) CCTStream(phr, this, L"Kinect Camera Transformer");
         if (!m_paStreams) hr = E_OUTOFMEMORY;
     }
+    m_bCreateViaThis = false;
+    // 先检查是否已经创建
+    if (SUCCEEDED(hr)) {
+        m_hPipe = ::CreateFileW(
+            KineCT::PIPE_NAME,  // 管道名称
+            GENERIC_READ,       // 访问模式
+            0,                  // 共享模式
+            nullptr,            // 那啥属性
+            OPEN_EXISTING,      // 创建位置
+            0,                  // 标志属性
+            nullptr             // 模板文件
+            );
+        // 创建成功, 开始等待
+        if (m_hPipe == INVALID_HANDLE_VALUE) {
+            // 检查错误
+            if (::GetLastError() != ERROR_PIPE_BUSY) {
+                ::MessageBoxW(nullptr, L"Could not open pipe", L"FAILED", MB_ICONERROR);
+                hr = E_FAIL;
+            }
+            // 忙时等待
+            if (!::WaitNamedPipeW(KineCT::PIPE_NAME, 1000)) {
+                ::MessageBoxW(nullptr, L"Could not wait pipe", L"FAILED", MB_ICONERROR);
+                ::MessageBoxW(nullptr, L"Please open the KCT host", L"FAILED", MB_OK);
+                hr = E_FAIL;
+            }
+        }
+        // 成功
+        else if(SUCCEEDED(hr)) {
+
+        }
+    }
+    // 创建管道
+    if (SUCCEEDED(hr) && m_hPipe != INVALID_HANDLE_VALUE) {
+        m_hPipe = ::CreateNamedPipeW(
+            KineCT::PIPE_NAME,
+            PIPE_ACCESS_INBOUND,
+            PIPE_READMODE_MESSAGE | PIPE_TYPE_BYTE | PIPE_WAIT,
+            1,          // 一个实例
+            0,              // 输出缓存
+            PIPE_BUFFER_SIZE,   // 输入缓存
+            1,
+            nullptr
+            );
+        // 创建成功, 开始连接
+        if (m_hPipe != INVALID_HANDLE_VALUE) {
+            m_bCreateViaThis = true;
+        }
+    }
     // 检查HR
     if (SUCCEEDED(*phr)) *phr = hr;
 }
 
-// CCTSource 推出host
-void KineCT::CCTSource::ExitHost() noexcept {
+// CCTSource 退出host
+KineCT::CCTSource::~CCTSource() noexcept {
+    // 关闭管道
+    if (m_hPipe != INVALID_HANDLE_VALUE) {
+        if (m_bCreateViaThis) {
+            ::DisconnectNamedPipe(m_hPipe);
+        }
+        ::CloseHandle(m_hPipe);
+        m_hPipe = INVALID_HANDLE_VALUE;
+    }
+    // 关闭host
+    KineCT::SafeRelease(m_pHost);
+    // 释放host dll
+    if (m_hHost) {
+        ::FreeLibrary(m_hHost);
+        m_hHost = nullptr;
+    }
+}
 
+// 保证host接口
+void KineCT::CCTSource::assure_host() noexcept {
+    assert(!m_pHost && m_hPipe && !m_hHost);
+    // 检查管道
+    wchar_t buffer[PIPE_BUFFER_SIZE / sizeof(wchar_t)];
+    DWORD read = PIPE_BUFFER_SIZE;
+    if (::ReadFile(m_hPipe, buffer, read, &read, nullptr)) {
+        m_hHost = ::LoadLibraryW(buffer);
+        assert(m_hHost);
+        if (!m_hHost) {
+            ::MessageBoxW(nullptr, buffer, L"FAILED TO LOADLIBRARY", MB_ICONERROR);
+            return;
+        }
+        KineCT::CreateHost create_host = nullptr;
+        create_host = reinterpret_cast<KineCT::CreateHost>(
+            ::GetProcAddress(m_hHost, "CreateHost")
+            );
+        assert(create_host);
+        if (!create_host) {
+            ::MessageBoxW(nullptr, L"CreateHost", L"FAILED TO GETPRCOADDRESS", MB_ICONERROR);
+            return;
+        }
+        auto hr = create_host(this, &this->m_pHost);
+        if (FAILED(hr)) {
+            ::MessageBoxW(nullptr, L"CreateHost", L"FAILED TO CREATEHOST", MB_ICONERROR);
+            return;
+        }
+    }
+}
+
+// CCTSource 退出host
+void KineCT::CCTSource::ExitHost() noexcept {
+    // 关闭host
+    KineCT::SafeRelease(m_pHost);
+    // 释放host dll
+    if (m_hHost) {
+        ::FreeLibrary(m_hHost);
+        m_hHost = nullptr;
+    }
 }
 
 // ------------------------------------------
-
+// KineCT::SafeAddRef
 // CCTStream 构造函数
 KineCT::CCTStream::CCTStream(HRESULT * phr, CCTSource * pParent, LPCWSTR pPinName) noexcept:
 CSourceStream(NAME("Kinect Virtual Camera : Depth"), phr, pParent, pPinName), 
-m_pParent(KineCT::SafAddRef(pParent)) {
+m_pParent((pParent)) {
     // Set the default media type as 640x480x24@30
-    GetMediaType(8, &m_mt);
+    this->GetMediaType(8, &m_mt);
 }
 
 // CCTStream 析构函数
 KineCT::CCTStream::~CCTStream() noexcept {
-    KineCT::SafeRelease(m_pParent);
+#ifdef _DEBUG
+    int a = 9; ++a;
+#endif
+   // KineCT::SafeRelease(m_pParent);
 }
 
 // 实现CCTStream::FillBuffer
 HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     HRESULT hr = S_OK;
-#if 0
-    //
     auto avgFrameTime = reinterpret_cast<VIDEOINFOHEADER*>(m_mt.pbFormat)->AvgTimePerFrame;
     auto rtNow = m_rtLastTime;
     m_rtLastTime += avgFrameTime;
@@ -84,33 +189,18 @@ HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     }
     // 获取大小
     if (SUCCEEDED(hr)) {
-        hr = lDataLen = pSamp->GetSize();
+        lDataLen = pSamp->GetSize();
+        // 写入数据
+        auto host = m_pParent->AssureHost();
+        if (host) {
+
+        }
+        // 不存在就随机写入
+        else {
+            for (auto itr = pData; itr < pData + lDataLen; ++itr)
+                *itr = ::rand();
+        }
     }
-    // 读取数据
-    if (SUCCEEDED(hr)) {
-        ::memset(pData, 0x80, lDataLen);
-    }
-
-#else
-    REFERENCE_TIME rtNow;
-
-    REFERENCE_TIME avgFrameTime = ((VIDEOINFOHEADER*)m_mt.pbFormat)->AvgTimePerFrame;
-
-    rtNow = m_rtLastTime;
-    m_rtLastTime += avgFrameTime;
-    pSamp->SetTime(&rtNow, &m_rtLastTime);
-    pSamp->SetSyncPoint(TRUE);
-
-    BYTE *pData;
-    long lDataLen;
-    pSamp->GetPointer(&pData);
-    lDataLen = pSamp->GetSize();
-    register auto itr = pData;
-    for (; itr < pData + lDataLen; ++itr)
-        *itr = rand();
-
-    return NOERROR;
-#endif
     return hr;
 }
 
@@ -237,7 +327,7 @@ STDMETHODIMP KineCT::CCTStream::SetFormat(AM_MEDIA_TYPE * pmt) noexcept {
     if (pin) {
         IFilterGraph *pGraph = m_pParent->GetGraph();
         pGraph->Reconnect(this);
-        //KineCT::SafeRelease(pGraph);
+        KineCT::SafeRelease(pGraph);
     }
     return S_OK;
 }

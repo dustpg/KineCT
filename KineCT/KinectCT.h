@@ -5,9 +5,13 @@
 // License: MIT  http://opensource.org/licenses/MIT
 // Author: dustpg   mailto:dustpg@gmail.com
 
-// base classed
+// base classes
+#ifdef BASECLASSES
 #include <streams.h>
 #include <dllsetup.h>
+#else
+#include <Windows.h>
+#endif
 
 // std library
 #include <cassert>
@@ -22,6 +26,14 @@
 
 // kinect ct namesapce
 namespace KineCT {
+    // event name
+    const wchar_t* EVENT_NAME = LR"KCT(Global\EVENT_KCT)KCT";
+    // pipe name
+    const wchar_t* PIPE_NAME = LR"pipe(\\.\pipe\KineCT)pipe";
+    // create host
+    using CreateHost = HRESULT(*)(ICTServer*, ICTHost** ppHost);
+    // pipe buffer length in byte
+    static constexpr uint32_t PIPE_BUFFER_SIZE = 4096;
     // {E1370B6F-7092-4145-8565-E517645F8380}
     static const GUID GUID_KineCTCam =
     { 0xe1370b6f, 0x7092, 0x4145,{ 0x85, 0x65, 0xe5, 0x17, 0x64, 0x5f, 0x83, 0x80 } };
@@ -33,7 +45,7 @@ namespace KineCT {
         }
     }
     // safe addref the interface
-    template<class T> auto SafAddRef(T* passed_interface) {
+    template<class T> auto SafeAddRef(T* passed_interface) {
         if (passed_interface) {
             passed_interface->AddRef();
         }
@@ -54,6 +66,21 @@ namespace KineCT {
     private:
         // ctor
         CCTSource(LPUNKNOWN lpunk, HRESULT *phr) noexcept;
+        // dtor
+        virtual ~CCTSource() noexcept;
+    public:
+        // assure the host interface
+        auto AssureHost() noexcept { if (!m_pHost) this->assure_host(); return m_pHost; }
+    private:
+        // assure the host interface
+        void assure_host() noexcept;
+    private:
+        // pipe
+        HANDLE                  m_hPipe = INVALID_HANDLE_VALUE;
+        // host dll handle
+        HMODULE                 m_hHost = nullptr;
+        // host interface
+        ICTHost*                m_pHost = nullptr;
     };
     // the ct stream override
     class CCTStream final : public CSourceStream, public IAMStreamConfig, public IKsPropertySet {

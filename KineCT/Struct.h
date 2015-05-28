@@ -16,10 +16,17 @@ namespace KineCT {
 #ifdef _MSC_VER
 #pragma warning(disable: 4200)
         // sub-options
-        const wchar_t*      subop[];
+        const wchar_t*      subop[0];
 #else 
         // sub-options
-        const wchar_t*      subop[];
+        const wchar_t*      subop[0];
 #endif
+    };
+    // CT Media Type
+    struct CTMEDIATYPE {
+        // width of output
+        uint32_t            width;
+        // height of output
+        uint32_t            height;
     };
 }

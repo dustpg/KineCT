@@ -164,6 +164,7 @@ CClassFactory::CreateInstance(
     /* destruct".  Hence we don't need additional tidy-up code  */
     /* to cope with NonDelegatingQueryInterface failing.        */
 
+
     if (SUCCEEDED(hr)) {
         ASSERT(*pv);
     }

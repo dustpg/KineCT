@@ -16,6 +16,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TEST", "TEST\TEST.vcxproj",
 		{EED068BB-C9FD-4C9D-A51D-61295CFA1935} = {EED068BB-C9FD-4C9D-A51D-61295CFA1935}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Host", "Host", "{13689A0B-BBF8-476F-BA88-5FA0D7F04279}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BasicHost", "Host\BasicHost\BasicHost.vcxproj", "{85E4B221-B733-423C-85B6-07772311F3B2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HostLauncher", "Host\HostLauncher\HostLauncher.vcxproj", "{B965F5D7-398C-49B8-AA9E-5118C82FF32E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -34,8 +40,20 @@ Global
 		{E8B76B36-11B4-441D-BBE7-3A2BFF73DFCB}.Debug|x86.Build.0 = Debug|Win32
 		{E8B76B36-11B4-441D-BBE7-3A2BFF73DFCB}.Release|x86.ActiveCfg = Release|Win32
 		{E8B76B36-11B4-441D-BBE7-3A2BFF73DFCB}.Release|x86.Build.0 = Release|Win32
+		{85E4B221-B733-423C-85B6-07772311F3B2}.Debug|x86.ActiveCfg = Debug|Win32
+		{85E4B221-B733-423C-85B6-07772311F3B2}.Debug|x86.Build.0 = Debug|Win32
+		{85E4B221-B733-423C-85B6-07772311F3B2}.Release|x86.ActiveCfg = Release|Win32
+		{85E4B221-B733-423C-85B6-07772311F3B2}.Release|x86.Build.0 = Release|Win32
+		{B965F5D7-398C-49B8-AA9E-5118C82FF32E}.Debug|x86.ActiveCfg = Debug|Win32
+		{B965F5D7-398C-49B8-AA9E-5118C82FF32E}.Debug|x86.Build.0 = Debug|Win32
+		{B965F5D7-398C-49B8-AA9E-5118C82FF32E}.Release|x86.ActiveCfg = Release|Win32
+		{B965F5D7-398C-49B8-AA9E-5118C82FF32E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{85E4B221-B733-423C-85B6-07772311F3B2} = {13689A0B-BBF8-476F-BA88-5FA0D7F04279}
+		{B965F5D7-398C-49B8-AA9E-5118C82FF32E} = {13689A0B-BBF8-476F-BA88-5FA0D7F04279}
 	EndGlobalSection
 EndGlobal

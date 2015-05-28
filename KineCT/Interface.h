@@ -13,8 +13,8 @@ namespace KineCT {
     // ct processor
     class KINECT_NOVTABLE ICTProcessor : public ICTInterface {
     public:
-        // update device
-        virtual auto Update(void* kinect, IID& iid) noexcept->HRESULT = 0;
+        // fill the buffer
+        virtual auto FillBuffer(uint8_t* buffer, size_t length) noexcept->HRESULT = 0;
         // show the options
         virtual auto GetOptions(const CTOPTION* options, uint32_t size) noexcept->HRESULT = 0;
         // set the options
@@ -23,6 +23,16 @@ namespace KineCT {
         virtual auto RequestedDevice(IID& KINECT_OUT iid) noexcept->HRESULT = 0;
         // initialize the kinect device
         virtual auto InitializeKinect(void* kinect, const IID& iid) noexcept->HRESULT = 0;
+    };
+    // ct host
+    class KINECT_NOVTABLE ICTHost : public ICTInterface {
+    public:
+        // initialize
+        virtual auto Initialize() noexcept->HRESULT = 0;
+        // set media type
+        virtual auto SetMediaType(const CTMEDIATYPE&) noexcept->HRESULT = 0;
+        // fill the buffer
+        virtual auto FillBuffer(uint8_t* buffer, size_t length) noexcept->HRESULT = 0;
     };
     // ct server
     class KINECT_NOVTABLE ICTServer {
