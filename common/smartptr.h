@@ -1,4 +1,4 @@
-// SmartPtr.h
+﻿// SmartPtr.h
 //
 // Defines a smart pointer class that does not depend on any ATL headers
 

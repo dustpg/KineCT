@@ -1,4 +1,4 @@
-//  Copyright (c) 1992 - 1997  Microsoft Corporation.  All Rights Reserved.
+﻿//  Copyright (c) 1992 - 1997  Microsoft Corporation.  All Rights Reserved.
 
 #ifndef _CHECKBMI_H_
 #define _CHECKBMI_H_

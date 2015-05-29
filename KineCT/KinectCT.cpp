@@ -1,7 +1,7 @@
-#include "KinectCT.h"
+ï»¿#include "KinectCT.h"
 
 
-// CCTSource ´´½¨ÊµÀı
+// CCTSource åˆ›å»ºå®ä¾‹
 auto KineCT::CCTSource::CreateInstance(LPUNKNOWN lpunk, HRESULT* phr) noexcept -> CUnknown * {
     assert(phr && "bad argument");
     auto instance = new(std::nothrow) CCTSource(lpunk, phr);
@@ -11,114 +11,87 @@ auto KineCT::CCTSource::CreateInstance(LPUNKNOWN lpunk, HRESULT* phr) noexcept -
     return instance;
 }
 
-// CCTSource ²éÑ¯½Ó¿Ú
+// CCTSource æŸ¥è¯¢æ¥å£
 STDMETHODIMP KineCT::CCTSource::QueryInterface(REFIID riid, void ** ppv) noexcept {
-    // ²éÑ¯½Ó¿Ú
+    // æŸ¥è¯¢æ¥å£
     if (riid == IID_IAMStreamConfig || riid == IID_IKsPropertySet)
         return m_paStreams[0]->QueryInterface(riid, ppv);
     else
         return CSource::QueryInterface(riid, ppv);
 }
 
-// CCTSource ¹¹Ôìº¯Êı
+// CCTSource æ„é€ å‡½æ•°
 KineCT::CCTSource::CCTSource(LPUNKNOWN lpunk, HRESULT *phr) noexcept:
 CSource(NAME("Kinect Camera Transformer"), lpunk, GUID_KineCTCam) {
     ASSERT(phr);
     //::MessageBoxW(nullptr, L"<KineCT::CCTSource::CCTSource>", L"INFO", MB_OK);
     CAutoLock cAutoLock(&m_cStateLock);
     HRESULT hr = S_OK;
-    // ´´½¨PIN
+    // åˆ›å»ºPIN
     if (SUCCEEDED(hr)) {
         m_paStreams = (CSourceStream **) new(std::nothrow) CCTStream*[1];
         if (!m_paStreams) hr = E_OUTOFMEMORY;
     }
-    // ´´½¨stream
+    // åˆ›å»ºstream
     if (SUCCEEDED(hr)) {
         m_paStreams[0] = new(std::nothrow) CCTStream(phr, this, L"Kinect Camera Transformer");
         if (!m_paStreams) hr = E_OUTOFMEMORY;
     }
-    m_bCreateViaThis = false;
-    // ÏÈ¼ì²éÊÇ·ñÒÑ¾­´´½¨
-    if (SUCCEEDED(hr)) {
-        m_hPipe = ::CreateFileW(
-            KineCT::PIPE_NAME,  // ¹ÜµÀÃû³Æ
-            GENERIC_READ,       // ·ÃÎÊÄ£Ê½
-            0,                  // ¹²ÏíÄ£Ê½
-            nullptr,            // ÄÇÉ¶ÊôĞÔ
-            OPEN_EXISTING,      // ´´½¨Î»ÖÃ
-            0,                  // ±êÖ¾ÊôĞÔ
-            nullptr             // Ä£°åÎÄ¼ş
-            );
-        // ´´½¨³É¹¦, ¿ªÊ¼µÈ´ı
-        if (m_hPipe == INVALID_HANDLE_VALUE) {
-            // ¼ì²é´íÎó
-            if (::GetLastError() != ERROR_PIPE_BUSY) {
-                ::MessageBoxW(nullptr, L"Could not open pipe", L"FAILED", MB_ICONERROR);
-                hr = E_FAIL;
-            }
-            // Ã¦Ê±µÈ´ı
-            if (!::WaitNamedPipeW(KineCT::PIPE_NAME, 1000)) {
-                ::MessageBoxW(nullptr, L"Could not wait pipe", L"FAILED", MB_ICONERROR);
-                ::MessageBoxW(nullptr, L"Please open the KCT host", L"FAILED", MB_OK);
-                hr = E_FAIL;
-            }
-        }
-        // ³É¹¦
-        else if(SUCCEEDED(hr)) {
-
-        }
-    }
-    // ´´½¨¹ÜµÀ
-    if (SUCCEEDED(hr) && m_hPipe != INVALID_HANDLE_VALUE) {
-        m_hPipe = ::CreateNamedPipeW(
-            KineCT::PIPE_NAME,
-            PIPE_ACCESS_INBOUND,
-            PIPE_READMODE_MESSAGE | PIPE_TYPE_BYTE | PIPE_WAIT,
-            1,          // Ò»¸öÊµÀı
-            0,              // Êä³ö»º´æ
-            PIPE_BUFFER_SIZE,   // ÊäÈë»º´æ
-            1,
-            nullptr
-            );
-        // ´´½¨³É¹¦, ¿ªÊ¼Á¬½Ó
-        if (m_hPipe != INVALID_HANDLE_VALUE) {
-            m_bCreateViaThis = true;
-        }
-    }
-    // ¼ì²éHR
+    // æ£€æŸ¥HR
     if (SUCCEEDED(*phr)) *phr = hr;
 }
 
-// CCTSource ÍË³öhost
+// CCTSource é€€å‡ºhost
 KineCT::CCTSource::~CCTSource() noexcept {
-    // ¹Ø±Õ¹ÜµÀ
-    if (m_hPipe != INVALID_HANDLE_VALUE) {
-        if (m_bCreateViaThis) {
-            ::DisconnectNamedPipe(m_hPipe);
-        }
-        ::CloseHandle(m_hPipe);
-        m_hPipe = INVALID_HANDLE_VALUE;
+    // å…³é—­ç®¡é“
+    if (m_hPipe == INVALID_HANDLE_VALUE) {
+
     }
-    // ¹Ø±Õhost
+    // å…³é—­host
     KineCT::SafeRelease(m_pHost);
-    // ÊÍ·Åhost dll
+    // é‡Šæ”¾host dll
     if (m_hHost) {
         ::FreeLibrary(m_hHost);
         m_hHost = nullptr;
     }
 }
 
-// ±£Ö¤host½Ó¿Ú
+// ä¿è¯hostæ¥å£
 void KineCT::CCTSource::assure_host() noexcept {
-    assert(!m_pHost && m_hPipe && !m_hHost);
-    // ¼ì²é¹ÜµÀ
-    wchar_t buffer[PIPE_BUFFER_SIZE / sizeof(wchar_t)];
-    DWORD read = PIPE_BUFFER_SIZE;
-    if (::ReadFile(m_hPipe, buffer, read, &read, nullptr)) {
-        m_hHost = ::LoadLibraryW(buffer);
+    assert(!m_pHost && !m_hHost);
+    // æœ‰Hostå°±ç›´æ¥è¿”å›
+    if (m_pHost) return;
+    // æ²¡æœ‰ç®¡é“
+    if (m_hPipe != INVALID_HANDLE_VALUE) {
+        // å°±åˆ›å»º
+        m_hPipe = ::CreateFileW(
+            KineCT::PIPE_NAME,      // ç®¡é“åç§°
+            GENERIC_READ,           // è®¿é—®æ¨¡å¼
+            0,                      // å…±äº«æ¨¡å¼
+            nullptr,                // é‚£å•¥å±æ€§
+            OPEN_EXISTING,          // åˆ›å»ºä½ç½®
+            FILE_FLAG_OVERLAPPED,   // è¦æ±‚å¼‚æ­¥
+            nullptr                 // æ¨¡æ¿æ–‡ä»¶
+            );
+        // åˆ›å»ºæˆåŠŸ, å¼€å§‹ç­‰å¾…
+        if (m_hPipe == INVALID_HANDLE_VALUE) {
+            // æ£€æŸ¥é”™è¯¯
+            if (::GetLastError() != ERROR_PIPE_BUSY) {
+                ::MessageBoxW(nullptr, L"Could not open pipe", L"FAILED", MB_ICONERROR);
+            }
+            return;
+        }
+    }
+    else {
+        // ç­‰å¾…IO
+        if (::WaitForSingleObject(m_hPipe, 0) != WAIT_OBJECT_0)
+            return;
+        m_dwRead;
+        // æˆåŠŸ, è¯»å–æ–‡ä»¶
+        m_hHost = ::LoadLibraryW(m_szBuffer);
         assert(m_hHost);
         if (!m_hHost) {
-            ::MessageBoxW(nullptr, buffer, L"FAILED TO LOADLIBRARY", MB_ICONERROR);
+            ::MessageBoxW(nullptr, m_szBuffer, L"FAILED TO LOADLIBRARY", MB_ICONERROR);
             return;
         }
         KineCT::CreateHost create_host = nullptr;
@@ -133,16 +106,21 @@ void KineCT::CCTSource::assure_host() noexcept {
         auto hr = create_host(this, &this->m_pHost);
         if (FAILED(hr)) {
             ::MessageBoxW(nullptr, L"CreateHost", L"FAILED TO CREATEHOST", MB_ICONERROR);
-            return;
         }
+        return;
     }
+    // æ£€æŸ¥ç®¡é“
+    m_dwRead = 0;
+    OVERLAPPED overlap; ::memset(&overlap, 0, sizeof(overlap));
+    ::ReadFile(m_hPipe, m_szBuffer, PIPE_BUFFER_SIZE, &m_dwRead, &overlap);
+    
 }
 
-// CCTSource ÍË³öhost
+// CCTSource é€€å‡ºhost
 void KineCT::CCTSource::ExitHost() noexcept {
-    // ¹Ø±Õhost
+    // å…³é—­host
     KineCT::SafeRelease(m_pHost);
-    // ÊÍ·Åhost dll
+    // é‡Šæ”¾host dll
     if (m_hHost) {
         ::FreeLibrary(m_hHost);
         m_hHost = nullptr;
@@ -151,7 +129,7 @@ void KineCT::CCTSource::ExitHost() noexcept {
 
 // ------------------------------------------
 // KineCT::SafeAddRef
-// CCTStream ¹¹Ôìº¯Êı
+// CCTStream æ„é€ å‡½æ•°
 KineCT::CCTStream::CCTStream(HRESULT * phr, CCTSource * pParent, LPCWSTR pPinName) noexcept:
 CSourceStream(NAME("Kinect Virtual Camera : Depth"), phr, pParent, pPinName), 
 m_pParent((pParent)) {
@@ -159,7 +137,7 @@ m_pParent((pParent)) {
     this->GetMediaType(8, &m_mt);
 }
 
-// CCTStream Îö¹¹º¯Êı
+// CCTStream ææ„å‡½æ•°
 KineCT::CCTStream::~CCTStream() noexcept {
 #ifdef _DEBUG
     int a = 9; ++a;
@@ -167,35 +145,35 @@ KineCT::CCTStream::~CCTStream() noexcept {
    // KineCT::SafeRelease(m_pParent);
 }
 
-// ÊµÏÖCCTStream::FillBuffer
+// å®ç°CCTStream::FillBuffer
 HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     HRESULT hr = S_OK;
     auto avgFrameTime = reinterpret_cast<VIDEOINFOHEADER*>(m_mt.pbFormat)->AvgTimePerFrame;
     auto rtNow = m_rtLastTime;
     m_rtLastTime += avgFrameTime;
-    // Êı¾İ
+    // æ•°æ®
     BYTE* pData = nullptr; long lDataLen = 0;
-    // ÉèÖÃÊ±¼ä
+    // è®¾ç½®æ—¶é—´
     if (SUCCEEDED(hr)) {
         hr = pSamp->SetTime(&rtNow, &m_rtLastTime);
     }
-    // ÉèÖÃÍ¬²½µã
+    // è®¾ç½®åŒæ­¥ç‚¹
     if (SUCCEEDED(hr)) {
         hr = pSamp->SetSyncPoint(TRUE);
     }
-    // »ñÈ¡Ö¸Õë
+    // è·å–æŒ‡é’ˆ
     if (SUCCEEDED(hr)) {
         hr = pSamp->GetPointer(&pData);
     }
-    // »ñÈ¡´óĞ¡
+    // è·å–å¤§å°
     if (SUCCEEDED(hr)) {
         lDataLen = pSamp->GetSize();
-        // Ğ´ÈëÊı¾İ
+        // å†™å…¥æ•°æ®
         auto host = m_pParent->AssureHost();
         if (host) {
 
         }
-        // ²»´æÔÚ¾ÍËæ»úĞ´Èë
+        // ä¸å­˜åœ¨å°±éšæœºå†™å…¥
         else {
             for (auto itr = pData; itr < pData + lDataLen; ++itr)
                 *itr = ::rand();
@@ -204,13 +182,13 @@ HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
     return hr;
 }
 
-// ÊµÏÖCCTStream::OnThreadCreate
+// å®ç°CCTStream::OnThreadCreate
 HRESULT KineCT::CCTStream::OnThreadCreate(void) noexcept {
     m_rtLastTime = 0;
     return S_OK;
 }
 
-// ÊµÏÖCCTStream::CheckMediaType
+// å®ç°CCTStream::CheckMediaType
 HRESULT KineCT::CCTStream::CheckMediaType(const CMediaType * pMediaType) noexcept {
     VIDEOINFOHEADER *pvi = reinterpret_cast<VIDEOINFOHEADER*>(pMediaType->Format());
     if (*pMediaType != m_mt)
@@ -218,7 +196,7 @@ HRESULT KineCT::CCTStream::CheckMediaType(const CMediaType * pMediaType) noexcep
     return S_OK;
 }
 
-// ÊµÏÖCCTStream::GetMediaType
+// å®ç°CCTStream::GetMediaType
 HRESULT KineCT::CCTStream::GetMediaType(int iPosition, CMediaType * pmt) noexcept {
     if (iPosition < 0) return E_INVALIDARG;
     if (iPosition > 8) return VFW_S_NO_MORE_ITEMS;
@@ -256,14 +234,14 @@ HRESULT KineCT::CCTStream::GetMediaType(int iPosition, CMediaType * pmt) noexcep
     return S_OK;
 }
 
-// ÊµÏÖCCTStream::SetMediaType
+// å®ç°CCTStream::SetMediaType
 HRESULT KineCT::CCTStream::SetMediaType(const CMediaType * pmt) noexcept {
     auto pvi = reinterpret_cast<VIDEOINFOHEADER*>(pmt->Format());
     register HRESULT hr = CSourceStream::SetMediaType(pmt);
     return hr;
 }
 
-// ÊµÏÖCCTStream::DecideBufferSize
+// å®ç°CCTStream::DecideBufferSize
 HRESULT KineCT::CCTStream::DecideBufferSize(IMemAllocator * pIMemAlloc, ALLOCATOR_PROPERTIES * pProperties) noexcept {
     CAutoLock lock(m_pFilter->pStateLock());
     HRESULT hr = S_OK;
@@ -273,18 +251,18 @@ HRESULT KineCT::CCTStream::DecideBufferSize(IMemAllocator * pIMemAlloc, ALLOCATO
     pProperties->cbBuffer = pvi->bmiHeader.biSizeImage;
 
     ALLOCATOR_PROPERTIES Actual;
-    // ÉèÖÃ
+    // è®¾ç½®
     if (SUCCEEDED(hr)) {
         hr = pIMemAlloc->SetProperties(pProperties, &Actual);
     }
-    // ¼ì²é
+    // æ£€æŸ¥
     if (SUCCEEDED(hr) && Actual.cbBuffer < pProperties->cbBuffer) {
         hr = E_FAIL;
     }
     return hr;
 }
 
-// ÊµÏÖ CCTStream::QueryInterface
+// å®ç° CCTStream::QueryInterface
 STDMETHODIMP KineCT::CCTStream::QueryInterface(REFIID riid, void ** ppv) noexcept {
     IUnknown* the_interface = nullptr;
     // Standard OLE stuff
@@ -294,28 +272,28 @@ STDMETHODIMP KineCT::CCTStream::QueryInterface(REFIID riid, void ** ppv) noexcep
         the_interface = static_cast<IKsPropertySet*>(this);
     else
         return CSourceStream::QueryInterface(riid, ppv);
-    // Ôö¼Ó¼ÆÊı
+    // å¢åŠ è®¡æ•°
     the_interface->AddRef();
     *ppv = the_interface;
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::AddRef
+// å®ç° CCTStream::AddRef
 STDMETHODIMP_(ULONG) KineCT::CCTStream::AddRef() noexcept {
     return this->GetOwner()->AddRef();
 }
 
-// ÊµÏÖ CCTStream::Release
+// å®ç° CCTStream::Release
 STDMETHODIMP_(ULONG) KineCT::CCTStream::Release() noexcept {
     return this->GetOwner()->Release();
 }
 
-// ÊµÏÖ CCTStream::Notify
+// å®ç° CCTStream::Notify
 STDMETHODIMP KineCT::CCTStream::Notify(IBaseFilter * pSender, Quality q) noexcept {
     return E_NOTIMPL;
 }
 
-// ÊµÏÖ CCTStream::SetFormat
+// å®ç° CCTStream::SetFormat
 STDMETHODIMP KineCT::CCTStream::SetFormat(AM_MEDIA_TYPE * pmt) noexcept {
     auto pvi = reinterpret_cast<VIDEOINFOHEADER*>(m_mt.pbFormat);
     if (!pmt) {
@@ -332,20 +310,20 @@ STDMETHODIMP KineCT::CCTStream::SetFormat(AM_MEDIA_TYPE * pmt) noexcept {
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::GetFormat
+// å®ç° CCTStream::GetFormat
 STDMETHODIMP KineCT::CCTStream::GetFormat(AM_MEDIA_TYPE ** ppmt) noexcept {
     *ppmt = CreateMediaType(&m_mt);
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::GetNumberOfCapabilities
+// å®ç° CCTStream::GetNumberOfCapabilities
 STDMETHODIMP KineCT::CCTStream::GetNumberOfCapabilities(int * piCount, int * piSize) noexcept {
     *piCount = 8;
     *piSize = sizeof(VIDEO_STREAM_CONFIG_CAPS);
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::GetStreamCaps
+// å®ç° CCTStream::GetStreamCaps
 STDMETHODIMP KineCT::CCTStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE ** pmt, BYTE * pSCC) noexcept {
     *pmt = CreateMediaType(&m_mt);
     auto pvi = reinterpret_cast<VIDEOINFOHEADER*>((*pmt)->pbFormat);
@@ -405,7 +383,7 @@ STDMETHODIMP KineCT::CCTStream::GetStreamCaps(int iIndex, AM_MEDIA_TYPE ** pmt, 
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::Set
+// å®ç° CCTStream::Set
 STDMETHODIMP KineCT::CCTStream::Set(
     REFGUID guidPropSet, 
     DWORD dwID, 
@@ -416,7 +394,7 @@ STDMETHODIMP KineCT::CCTStream::Set(
     return E_NOTIMPL;
 }
 
-// ÊµÏÖ CCTStream::Get
+// å®ç° CCTStream::Get
 STDMETHODIMP KineCT::CCTStream::Get(
     REFGUID guidPropSet, 
     DWORD dwPropID, 
@@ -437,7 +415,7 @@ STDMETHODIMP KineCT::CCTStream::Get(
     return S_OK;
 }
 
-// ÊµÏÖ CCTStream::QuerySupported
+// å®ç° CCTStream::QuerySupported
 STDMETHODIMP KineCT::CCTStream::QuerySupported(
     REFGUID guidPropSet, 
     DWORD dwPropID, 
@@ -448,3 +426,4 @@ STDMETHODIMP KineCT::CCTStream::QuerySupported(
     if (pTypeSupport) *pTypeSupport = KSPROPERTY_SUPPORT_GET;
     return S_OK;
 }
+

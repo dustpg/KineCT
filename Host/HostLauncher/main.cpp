@@ -1,12 +1,8 @@
-#include <Windows.h>
-#include <cstdint>
-#include "../../KineCT/Struct.h"
+ï»¿#include <Windows.h>
 
-
-
-// Ó¦ÓÃ³ÌĞòÈë¿Ú
+// åº”ç”¨ç¨‹åºå…¥å£
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
-    // ¼ì²éÃüÁîĞĞ
+    // æ£€æŸ¥å‘½ä»¤è¡Œ
     if (!lpCmdLine[0]) {
         ::MessageBoxW(nullptr, L"HostLauncher.exe [DllFilePath]", L"command line helper", MB_OK);
     }
@@ -14,61 +10,61 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
         constexpr int BUFFER_LENGTH = 4096;
         const wchar_t* KineCT__PIPE_NAME = LR"pipe(\\.\pipe\KineCT)pipe";
         const wchar_t* KineCT__EVENT_NAME = LR"KCT(Global\EVENT_KCT)KCT";
-        uint8_t buf[BUFFER_LENGTH];
+        wchar_t buffer[BUFFER_LENGTH/ sizeof(wchar_t)];
         auto length = ::wcslen(lpCmdLine);
-        // È¥³ıÒıºÅ
+        // å»é™¤å¼•å·
         if (lpCmdLine[0] == L'"') {
             ++lpCmdLine;
             length -= 2;
         }
-        ::memcpy(buf, lpCmdLine, length * sizeof(wchar_t));
-        buf[length] = L'\0';
-        // ´´½¨µÈ´ıÊÂ¼ş
+        ::memcpy(buffer, lpCmdLine, length * sizeof(wchar_t));
+        buffer[length] = L'\0';
+        // åˆ›å»ºç­‰å¾…äº‹ä»¶
         auto hFinished = ::CreateEventW(nullptr, TRUE, FALSE, L"");
         if (hFinished == INVALID_HANDLE_VALUE) {
             ::MessageBoxW(nullptr, L"CreateEvent", L"FAILED" , MB_ICONERROR);
             return -1;
         }
-        // ´´½¨¹ÜµÀ
+        // åˆ›å»ºç®¡é“
         auto hPipe = ::CreateNamedPipeW(
-            KineCT__PIPE_NAME,  // ¹ÜµÀÃû³Æ
+            KineCT__PIPE_NAME,  // ç®¡é“åç§°
             PIPE_ACCESS_OUTBOUND,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_BYTE | PIPE_WAIT,
             1,
-            4096,   // Êä³ö»º´æ
-            0,      // ÊäÈë»º´æ
+            4096,   // è¾“å‡ºç¼“å­˜
+            0,      // è¾“å…¥ç¼“å­˜
             1,
             nullptr
             );
-        // ¼ì²é´íÎó
+        // æ£€æŸ¥é”™è¯¯
         if (hPipe == INVALID_HANDLE_VALUE) {
             ::MessageBoxW(nullptr, L"CreateNamedPipe failed", L"Failed", MB_ICONERROR);
             ::CloseHandle(hFinished);
             return -1;
         }
-        // µÈ´ıÁ¬½Ó
-        auto recode = [=]() -> int {
-            // µÈ´ı·şÎñÆ÷Á¬½Ó
+        // ç­‰å¾…è¿æ¥
+        auto recode = [=](wchar_t* buffer) -> int {
+            // ç­‰å¾…æœåŠ¡å™¨è¿æ¥
             BOOL bConnected = ::ConnectNamedPipe(hPipe, nullptr) ?
                 TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
-            // Á¬½ÓÊ§°Ü
+            // è¿æ¥å¤±è´¥
             if (!bConnected) {
                 ::MessageBoxW(nullptr, L"ConnectNamedPipe failed", L"Failed", MB_ICONERROR);
                 return -1;
             }
-            // Ğ´ÈëÊı¾İ
+            // å†™å…¥æ•°æ®
             DWORD cbWritten = 0;
-            auto ok = ::WriteFile(hPipe, buf, (length + 1)*sizeof(wchar_t), &cbWritten, nullptr
+            auto ok = ::WriteFile(hPipe, buffer, (length+1)*sizeof(wchar_t), &cbWritten, nullptr
                 );
             return ok ? 0 : -1;
-        }();
-        // ³É¹¦, ÔòµÈ´ı
+        }(buffer);
+        // æˆåŠŸ, åˆ™ç­‰å¾…
         if (recode && ::WaitForSingleObject(hFinished, 10'000) == WAIT_TIMEOUT) {
             ::MessageBoxW(nullptr, L"WaitForSingleObject Time Out", L"Failed", MB_ICONERROR);
         }
-        // ¶Ï¿ªÁ¬½Ó
+        // æ–­å¼€è¿æ¥
         ::DisconnectNamedPipe(hPipe);
-        // ¹Ø±Õ¾ä±ú
+        // å…³é—­å¥æŸ„
         ::CloseHandle(hPipe);
         ::CloseHandle(hFinished);
         hFinished = INVALID_HANDLE_VALUE;

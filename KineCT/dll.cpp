@@ -1,4 +1,4 @@
-#include "KinectCT.h"
+ï»¿#include "KinectCT.h"
 
 
 STDAPI AMovieSetupRegisterServer(CLSID   clsServer
@@ -39,22 +39,22 @@ namespace KineCT {
         1,                              // Number pins
         PinsKCam                        // Pin details
     };
-    // ×¢²áFilters
+    // æ³¨å†ŒFilters
     auto RegisterFilters(BOOL bRegister) noexcept { 
         WCHAR achFileName[MAX_PATH];
         ASSERT(g_hInst != 0);
-        // ¼ì²éÂ·¾¶
+        // æ£€æŸ¥è·¯å¾„
         if (!::GetModuleFileNameW(g_hInst, achFileName, lengthof(achFileName))) {
             return AmHresultFromWin32(::GetLastError());
         }
-        // ³õÊ¼»¯COM
+        // åˆå§‹åŒ–COM
         auto hr = ::CoInitialize(0);
 #if 1
-        // ×¢²á
+        // æ³¨å†Œ
         if (bRegister) {
             hr = ::AMovieSetupRegisterServer(GUID_KineCTCam, L"Kinect Camera Transformer", achFileName, L"Both", L"InprocServer32");
         }
-        // ´´½¨
+        // åˆ›å»º
         if (SUCCEEDED(hr)) {
             IFilterMapper2 *fm = nullptr;
             hr = ::CoCreateInstance(
@@ -64,7 +64,7 @@ namespace KineCT {
                 IID_IFilterMapper2,
                 reinterpret_cast<void**>(&fm)
                 );
-            // ×¢²á
+            // æ³¨å†Œ
             if (SUCCEEDED(hr)) {
                 if (bRegister) {
                     IMoniker *pMoniker = 0;
@@ -79,10 +79,10 @@ namespace KineCT {
                     hr = fm->UnregisterFilter(&CLSID_VideoInputDeviceCategory, 0, GUID_KineCTCam);
                 }
             }
-            // ÊÍ·Å½Ó¿Ú
+            // é‡Šæ”¾æ¥å£
             KineCT::SafeRelease(fm);
         }
-        // ×¢Ïú
+        // æ³¨é”€
         if (SUCCEEDED(hr) && !bRegister) {
             hr = AMovieSetupUnregisterServer(GUID_KineCTCam);
         }
@@ -97,7 +97,7 @@ namespace KineCT {
                 IID_IFilterMapper2, 
                 reinterpret_cast<void**>(&mapper)
                 );
-            // ÉèÖÃ
+            // è®¾ç½®
             assert(SUCCEEDED(hr));
             if (SUCCEEDED(hr)) {
                 ::AMovieSetupRegisterFilter2(&KineCT::AMSFilterKCam, mapper, bRegister);
@@ -111,7 +111,7 @@ namespace KineCT {
     }
 }
 
-// È«¾ÖÄ£°å
+// å…¨å±€æ¨¡æ¿
 CFactoryTemplate g_Templates[] = {
     {
         L"Kinect Camera Transformer",
@@ -121,26 +121,26 @@ CFactoryTemplate g_Templates[] = {
         &KineCT::AMSFilterKCam
     },
 };
-// ÊıÁ¿
+// æ•°é‡
 int g_cTemplates = lengthof(g_Templates);
 
 
-// ×¢²á·şÎñ
+// æ³¨å†ŒæœåŠ¡
 STDAPI DllRegisterServer() {
     ::MessageBoxW(nullptr, L"<DllRegisterServer>", L"INFO", MB_OK);
     return KineCT::RegisterFilters(TRUE);
 }
 
-// ×¢Ïú·şÎñ
+// æ³¨é”€æœåŠ¡
 STDAPI DllUnregisterServer() {
     ::MessageBoxW(nullptr, L"<DllUnregisterServer>", L"INFO", MB_OK);
     return KineCT::RegisterFilters(FALSE);
 }
 
-// base classes ÀïÃæµÄÈë¿Úº¯Êı
+// base classes é‡Œé¢çš„å…¥å£å‡½æ•°
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
-// Dll Ö÷º¯Êı
+// Dll ä¸»å‡½æ•°
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID lpReserved) {
 
     return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 // KineCT -- Kinect Camera Transformer, a virtual camera for kinect that 
 // can be added some effects
 
@@ -27,9 +27,9 @@
 // kinect ct namesapce
 namespace KineCT {
     // event name
-    const wchar_t* EVENT_NAME = LR"KCT(Global\EVENT_KCT)KCT";
+    static const wchar_t* EVENT_NAME = LR"KCT(Global\EVENT_KCT)KCT";
     // pipe name
-    const wchar_t* PIPE_NAME = LR"pipe(\\.\pipe\KineCT)pipe";
+    static const wchar_t* PIPE_NAME = LR"pipe(\\.\pipe\KineCT)pipe";
     // create host
     using CreateHost = HRESULT(*)(ICTServer*, ICTHost** ppHost);
     // pipe buffer length in byte
@@ -75,12 +75,16 @@ namespace KineCT {
         // assure the host interface
         void assure_host() noexcept;
     private:
-        // pipe
+        // name pipe
         HANDLE                  m_hPipe = INVALID_HANDLE_VALUE;
         // host dll handle
         HMODULE                 m_hHost = nullptr;
         // host interface
         ICTHost*                m_pHost = nullptr;
+        // read size
+        DWORD                   m_dwRead = 0;
+        // buffer
+        wchar_t                 m_szBuffer[PIPE_BUFFER_SIZE / sizeof(wchar_t)];
     };
     // the ct stream override
     class CCTStream final : public CSourceStream, public IAMStreamConfig, public IKsPropertySet {
