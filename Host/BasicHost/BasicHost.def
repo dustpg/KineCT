@@ -1,0 +1,3 @@
+LIBRARY     BasicHost.dll
+EXPORTS
+            CreateHost          PRIVATE
