@@ -872,7 +872,7 @@ BOOL MakeBuilder()
     if(gcap.pBuilder)
         return TRUE;
 
-    gcap.pBuilder = new ISampleCaptureGraphBuilder( );
+    gcap.pBuilder = new(std::nothrow)ISampleCaptureGraphBuilder( );
     if( NULL == gcap.pBuilder )
     {
         return FALSE;
@@ -1217,7 +1217,7 @@ BOOL InitCapFilters()
                         if(fMatch)
                         {
                             HRESULT hrCreate=S_OK;
-                            gcap.pCrossbar = new CCrossbar(pP, &hrCreate);
+                            gcap.pCrossbar = new(std::nothrow)CCrossbar(pP, &hrCreate);
                             if (!gcap.pCrossbar || FAILED(hrCreate))
                                 break;
 
@@ -3896,7 +3896,7 @@ BOOL SaveCaptureFile(HWND hWnd)
         if(hr == NOERROR)
         {
             // allow the user to press ESC to abort... ask for progress
-            CProgress *pProg = new CProgress();
+            CProgress *pProg = new(std::nothrow)CProgress();
             IAMCopyCaptureFileProgress *pIProg = NULL;
             if(pProg)
             {

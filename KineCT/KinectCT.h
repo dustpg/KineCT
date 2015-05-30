@@ -51,6 +51,7 @@ namespace KineCT {
         }
         return passed_interface;
     }
+#ifdef BASECLASSES
     // the ct source
     class CCTSource final : public ICTServer, public CSource {
     public:
@@ -81,6 +82,8 @@ namespace KineCT {
         HMODULE                 m_hHost = nullptr;
         // host interface
         ICTHost*                m_pHost = nullptr;
+        // media type
+        CTMEDIATYPE             m_cMedia;
         // read size
         DWORD                   m_dwRead = 0;
         // buffer
@@ -135,6 +138,10 @@ namespace KineCT {
     private:
         // source
         CCTSource*              m_pParent = nullptr;
+#ifdef _DEBUG
+        // debug count
+        size_t                  m_cCount = 0;
+#endif
         // last time
         REFERENCE_TIME          m_rtLastTime;
         // state
@@ -142,6 +149,6 @@ namespace KineCT {
         // clock
         IReferenceClock*        m_pClock = nullptr;
     };
-
+#endif
 };
 

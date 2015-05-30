@@ -22,17 +22,23 @@ namespace KineCT {
         void Release() noexcept override;
     public: // impl ICTHost
         // initialize
-        auto Initialize() noexcept->HRESULT;
+        auto Initialize() noexcept->HRESULT override;
         // set media type
-        virtual auto SetMediaType(const CTMEDIATYPE&) noexcept->HRESULT;
+        auto SetMediaType(const CTMEDIATYPE&) noexcept->HRESULT;
         // fill the buffer
-        virtual auto FillBuffer(uint8_t* buffer, size_t length) noexcept->HRESULT;
+        auto FillBuffer(uint8_t* buffer, size_t length) noexcept->HRESULT;
     public:
         // ctor
         CCTBasicHost(ICTServer*) noexcept;
+        // copy ctor
+        CCTBasicHost(const CCTBasicHost&) = delete;
+        // move ctor
+        CCTBasicHost(CCTBasicHost&&) = delete;
     private:
         // ctor
         ~CCTBasicHost() noexcept;
+        // wprintf
+        void __cdecl wprintf(const wchar_t*, ...) noexcept;
     private:
         // server
         ICTServer*                  m_pServer = nullptr;
@@ -40,9 +46,13 @@ namespace KineCT {
         ICTProcessor*               m_pProcessor = nullptr;
         // media type
         CTMEDIATYPE                 m_cMediaType;
+        // output handle
+        HANDLE                      m_hStdOut = nullptr;
+        // input handle
+        HANDLE                      m_hStdIn = nullptr;
 #ifdef USING_KINECT_V2
         // open the kinect v2
-        void open_v2() noexcept;
+        auto open_v2() noexcept ->HRESULT;
         // shut down the kinect v2
         void shut_down_v2() noexcept;
         // dll for kinect v2

@@ -21,6 +21,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BasicHost", "Host\BasicHost\BasicHost.vcxproj", "{85E4B221-B733-423C-85B6-07772311F3B2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HostLauncher", "Host\HostLauncher\HostLauncher.vcxproj", "{B965F5D7-398C-49B8-AA9E-5118C82FF32E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85E4B221-B733-423C-85B6-07772311F3B2} = {85E4B221-B733-423C-85B6-07772311F3B2}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

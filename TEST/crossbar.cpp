@@ -63,7 +63,7 @@ CCrossbar::CCrossbar(
     // Init everything to zero
     ZeroMemory (&m_RoutingRoot, sizeof (m_RoutingRoot));
 
-    m_RoutingList = new CRoutingList (TEXT("RoutingList"), 5);
+    m_RoutingList = new(std::nothrow)CRoutingList (TEXT("RoutingList"), 5);
 
     if (m_RoutingList)
         hr = BuildRoutingList(pStartingInputPin, &m_RoutingRoot, 0 /* Depth */);
@@ -259,7 +259,7 @@ HRESULT CCrossbar::SaveRouting (CRouting *pRoutingNew)
     DbgLog((LOG_TRACE,3,TEXT("CCrossbar::SaveRouting, Depth=%d, NumberOfRoutings=%d"), 
             Depth, m_RoutingList->GetCount() + 1));
 
-    pr = new CRouting[Depth];
+    pr = new(std::nothrow)CRouting[Depth];
     if (pr == NULL)
         return E_FAIL;
 

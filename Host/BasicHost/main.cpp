@@ -1,5 +1,5 @@
 ﻿#include "BasicHost.h"
-
+#include <new>
 // 创建Host
 extern "C" auto CreateHost(KineCT::ICTServer* pServer, KineCT::ICTHost** ppHost) noexcept ->HRESULT {
     // 检测参数
@@ -7,7 +7,10 @@ extern "C" auto CreateHost(KineCT::ICTServer* pServer, KineCT::ICTHost** ppHost)
         assert(!"bad arguments");
         return E_INVALIDARG;
     }
-
+    auto host = new(std::nothrow) KineCT::CCTBasicHost(pServer);
+    register auto hr = host ? S_OK : E_OUTOFMEMORY;
+    *ppHost = host;
+    return hr;
 }
 
 
@@ -16,31 +19,16 @@ void KineCT::CCTBasicHost::Release() noexcept {
     delete this;
 }
 
-// CCTBasicHost 构造函数
-KineCT::CCTBasicHost::CCTBasicHost(ICTServer* server) noexcept:m_pServer(server){
-    assert(server);
-    ::memset(&m_cMediaType, 0, sizeof(m_cMediaType));
-
-}
-
-// CCTBasicHost 析构函数
-KineCT::CCTBasicHost::~CCTBasicHost() noexcept {
-    // 关闭V2
-#ifdef USING_KINECT_V2
-    this->shut_down_v2();
-#endif
-}
-
 #ifdef USING_KINECT_V2
 // 打开KinectV2
-void KineCT::CCTBasicHost::open_v2() noexcept {
+auto KineCT::CCTBasicHost::open_v2() noexcept ->HRESULT {
     assert(!m_hKinectV2);
     m_hKinectV2 = ::LoadLibraryW(L"Kinect20.dll");
     // 检查
     if (!m_hKinectV2) {
         assert(!"m_hKinectV2 -> null");
         ::MessageBoxW(nullptr, L"Cannot Find 'Kinect20.dll' 未找到", L"Error", MB_ICONERROR);
-        return;
+        return STG_E_FILENOTFOUND;
     }
     // 获取默认Kinect
     auto getDefaultKinectSensor = reinterpret_cast<decltype(&::GetDefaultKinectSensor)>(
@@ -55,6 +43,7 @@ void KineCT::CCTBasicHost::open_v2() noexcept {
     if (FAILED(hr)) {
         ::MessageBoxW(nullptr, L"<KineCT::CCTBasicHost::open_v2> FAILED", L"Error", MB_ICONERROR);
     }
+    return hr;
 }
 
 // 关闭KinectV2

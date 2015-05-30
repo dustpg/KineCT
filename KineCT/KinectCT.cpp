@@ -24,6 +24,7 @@ STDMETHODIMP KineCT::CCTSource::QueryInterface(REFIID riid, void ** ppv) noexcep
 KineCT::CCTSource::CCTSource(LPUNKNOWN lpunk, HRESULT *phr) noexcept:
 CSource(NAME("Kinect Camera Transformer"), lpunk, GUID_KineCTCam) {
     ASSERT(phr);
+    m_cMedia = { 640, 480 };
     //::MessageBoxW(nullptr, L"<KineCT::CCTSource::CCTSource>", L"INFO", MB_OK);
     CAutoLock cAutoLock(&m_cStateLock);
     HRESULT hr = S_OK;
@@ -44,7 +45,7 @@ CSource(NAME("Kinect Camera Transformer"), lpunk, GUID_KineCTCam) {
 // CCTSource 退出host
 KineCT::CCTSource::~CCTSource() noexcept {
     // 关闭管道
-    if (m_hPipe == INVALID_HANDLE_VALUE) {
+    if (m_hPipe != INVALID_HANDLE_VALUE) {
 
     }
     // 关闭host
@@ -62,7 +63,7 @@ void KineCT::CCTSource::assure_host() noexcept {
     // 有Host就直接返回
     if (m_pHost) return;
     // 没有管道
-    if (m_hPipe != INVALID_HANDLE_VALUE) {
+    if (m_hPipe == INVALID_HANDLE_VALUE) {
         // 就创建
         m_hPipe = ::CreateFileW(
             KineCT::PIPE_NAME,      // 管道名称
@@ -75,17 +76,24 @@ void KineCT::CCTSource::assure_host() noexcept {
             );
         // 创建成功, 开始等待
         if (m_hPipe == INVALID_HANDLE_VALUE) {
-            // 检查错误
-            if (::GetLastError() != ERROR_PIPE_BUSY) {
-                ::MessageBoxW(nullptr, L"Could not open pipe", L"FAILED", MB_ICONERROR);
-            }
             return;
         }
+        // 检查管道
+        m_dwRead = 0;
+        OVERLAPPED overlap; ::memset(&overlap, 0, sizeof(overlap));
+        ::ReadFile(m_hPipe, m_szBuffer, PIPE_BUFFER_SIZE, &m_dwRead, &overlap);
     }
     else {
         // 等待IO
-        if (::WaitForSingleObject(m_hPipe, 0) != WAIT_OBJECT_0)
-            return;
+        if (::WaitForSingleObject(m_hPipe, 0) != WAIT_OBJECT_0) return;
+        // 允许退出
+        {
+            auto event = ::OpenEventW(EVENT_ALL_ACCESS, FALSE, KineCT::EVENT_NAME);
+            if (event != INVALID_HANDLE_VALUE) {
+                ::SetEvent(event);
+                ::CloseHandle(event);
+            }
+        }
         m_dwRead;
         // 成功, 读取文件
         m_hHost = ::LoadLibraryW(m_szBuffer);
@@ -106,14 +114,17 @@ void KineCT::CCTSource::assure_host() noexcept {
         auto hr = create_host(this, &this->m_pHost);
         if (FAILED(hr)) {
             ::MessageBoxW(nullptr, L"CreateHost", L"FAILED TO CREATEHOST", MB_ICONERROR);
+            return;
         }
-        return;
+        // 初始化
+        m_pHost->Initialize();
+        m_pHost->SetMediaType(m_cMedia);
+        if (FAILED(hr)) {
+            ::MessageBoxW(nullptr, L"ICTHost::Initialize", L"FAILED", MB_ICONERROR);
+            return;
+        }
+
     }
-    // 检查管道
-    m_dwRead = 0;
-    OVERLAPPED overlap; ::memset(&overlap, 0, sizeof(overlap));
-    ::ReadFile(m_hPipe, m_szBuffer, PIPE_BUFFER_SIZE, &m_dwRead, &overlap);
-    
 }
 
 // CCTSource 退出host
@@ -171,12 +182,15 @@ HRESULT KineCT::CCTStream::FillBuffer(IMediaSample * pSamp) noexcept {
         // 写入数据
         auto host = m_pParent->AssureHost();
         if (host) {
-
+            host->FillBuffer(pData, lDataLen);
         }
-        // 不存在就随机写入
+        // 不存在就蓝屏
         else {
-            for (auto itr = pData; itr < pData + lDataLen; ++itr)
-                *itr = ::rand();
+            for (auto* __restrict itr = pData; itr < pData + lDataLen; itr += 3) {
+                itr[0] = 0xFF;
+                itr[1] = 0x00;
+                itr[2] = 0x00;
+            }
         }
     }
     return hr;
@@ -280,11 +294,17 @@ STDMETHODIMP KineCT::CCTStream::QueryInterface(REFIID riid, void ** ppv) noexcep
 
 // 实现 CCTStream::AddRef
 STDMETHODIMP_(ULONG) KineCT::CCTStream::AddRef() noexcept {
+#ifdef _DEBUG
+    ++m_cCount;
+#endif
     return this->GetOwner()->AddRef();
 }
 
 // 实现 CCTStream::Release
 STDMETHODIMP_(ULONG) KineCT::CCTStream::Release() noexcept {
+#ifdef _DEBUG
+    --m_cCount;
+#endif
     return this->GetOwner()->Release();
 }
 

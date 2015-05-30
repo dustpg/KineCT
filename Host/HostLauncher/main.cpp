@@ -20,7 +20,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
         ::memcpy(buffer, lpCmdLine, length * sizeof(wchar_t));
         buffer[length] = L'\0';
         // 创建等待事件
-        auto hFinished = ::CreateEventW(nullptr, TRUE, FALSE, L"");
+        auto hFinished = ::CreateEventW(nullptr, TRUE, FALSE, KineCT__EVENT_NAME);
         if (hFinished == INVALID_HANDLE_VALUE) {
             ::MessageBoxW(nullptr, L"CreateEvent", L"FAILED" , MB_ICONERROR);
             return -1;
@@ -28,7 +28,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
         // 创建管道
         auto hPipe = ::CreateNamedPipeW(
             KineCT__PIPE_NAME,  // 管道名称
-            PIPE_ACCESS_OUTBOUND,
+            PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_BYTE | PIPE_WAIT,
             1,
             4096,   // 输出缓存
@@ -44,12 +44,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
         }
         // 等待连接
         auto recode = [=](wchar_t* buffer) -> int {
+            OVERLAPPED overlapped; ::memset(&overlapped, 0, sizeof(overlapped));
             // 等待服务器连接
-            BOOL bConnected = ::ConnectNamedPipe(hPipe, nullptr) ?
-                TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
-            // 连接失败
-            if (!bConnected) {
-                ::MessageBoxW(nullptr, L"ConnectNamedPipe failed", L"Failed", MB_ICONERROR);
+            BOOL bConnected = ::ConnectNamedPipe(hPipe, &overlapped);
+            // 超时
+            if (::WaitForSingleObject(hPipe, 30'000) == WAIT_TIMEOUT) {
+                ::MessageBoxW(nullptr, L"Failed to Wait for ConnectNamedPipe in 30 sec", L"Failed", MB_ICONERROR);
                 return -1;
             }
             // 写入数据
@@ -59,7 +59,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* lpCmdLine, int) {
             return ok ? 0 : -1;
         }(buffer);
         // 成功, 则等待
-        if (recode && ::WaitForSingleObject(hFinished, 10'000) == WAIT_TIMEOUT) {
+        if (!recode && ::WaitForSingleObject(hFinished, 10'000) == WAIT_TIMEOUT) {
             ::MessageBoxW(nullptr, L"WaitForSingleObject Time Out", L"Failed", MB_ICONERROR);
         }
         // 断开连接
