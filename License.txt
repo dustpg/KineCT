@@ -1,6 +1,6 @@
 ﻿LongUI License: MIT License, BUT
 
-FREE FOR NON-COMMERCIAL, CONTACT ME FOR COMMERCIAL
+FREE FOR NON-COMMERCIAL USE, CONTACT ME FOR COMMERCIAL USE
 
 * Copyright (c) 2015 dustpg   mailto:dustpg@gmail.com
 *
